@@ -8,7 +8,7 @@ from ROAR.agent_module.pure_pursuit_agent \
 from ROAR_Sim.carla_client.carla_runner import CarlaRunner
 from typing import Tuple
 from prettytable import PrettyTable
-from ROAR.agent_module.michael_pid_agent import PIDAgent
+from ROAR.agent_module.pid_agent import PIDAgent
 
 
 def compute_score(carla_runner: CarlaRunner) -> Tuple[float, int, int]:
@@ -50,7 +50,7 @@ def run(agent_class, agent_config_file_path: Path, carla_config_file_path: Path,
     agent_config.num_laps = num_laps
     carla_runner = CarlaRunner(carla_settings=carla_config,
                                agent_settings=agent_config,
-                               npc_agent_class=PurePursuitAgent,
+                               npc_agent_class=PIDAgent,
                                competition_mode=True,
                                start_bbox=[2530, 99, 4064, 2543, 120, 4076],
                                lap_count=num_laps)

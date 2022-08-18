@@ -4,6 +4,7 @@ from ROAR.utilities_module.vehicle_models import Vehicle, VehicleControl
 from ROAR.configurations.configuration import Configuration as AgentConfig
 import cv2
 from collections import deque
+from pathlib import Path
 import numpy as np
 
 class ForwardOnlyAgent(Agent):
@@ -14,7 +15,6 @@ class ForwardOnlyAgent(Agent):
 
     def run_step(self, sensors_data: SensorsData, vehicle: Vehicle) -> VehicleControl:
         super().run_step(sensors_data=sensors_data, vehicle=vehicle)
-        steering = 0
         return VehicleControl(brake=True)
         # if self.time_counter > 50:
         #     return VehicleControl(throttle=0, steering=steering, brake=True)
