@@ -88,8 +88,8 @@ class PIDTurnController(Controller):
             throttle = -0.55
             brake = 1
             #TODO
-            if self.lat_pid_controller.minutes == 7 and self.lat_pid_controller.seconds > 55 and self.lat_pid_controller.seconds < 59:
-                print("in the box")
+            #if self.lat_pid_controller.minutes == 7 and self.lat_pid_controller.seconds > 55 and self.lat_pid_controller.seconds < 59:
+                #print("in the box")
             #print(sharp_error)
             # print("narrow turn")
         elif self.delta_pitch < -0.35 and current_speed > 90 and not self.pitch_bypass:  # small bump
