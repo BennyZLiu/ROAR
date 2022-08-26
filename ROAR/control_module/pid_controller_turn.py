@@ -13,6 +13,7 @@ from ROAR.agent_module.agent import Agent
 from typing import Tuple
 import json
 from pathlib import Path
+import time
 
 
 class PIDTurnController(Controller):
@@ -39,14 +40,12 @@ class PIDTurnController(Controller):
 
     def run_in_series(self, next_waypoint: Transform, close_waypoint: Transform, far_waypoint: Transform,
                       **kwargs) -> VehicleControl:
-
         # run lat pid controller
         steering, error, wide_error, sharp_error = self.lat_pid_controller.run_in_series(next_waypoint=next_waypoint,
                                                                                          close_waypoint=close_waypoint,
                                                                                          far_waypoint=far_waypoint)
 
         current_speed = Vehicle.get_speed(self.agent.vehicle)
-
         # get errors from lat pid
         error = abs(round(error, 3))
         wide_error = abs(round(wide_error, 3))
@@ -56,6 +55,7 @@ class PIDTurnController(Controller):
         # calculate change in pitch
         pitch = float(next_waypoint.record().split(",")[4])
         # print(next_waypoint.record())
+
 
         if pitch == 1.234567890:
             # bypass pitch
@@ -70,6 +70,8 @@ class PIDTurnController(Controller):
             self.old_pitch = pitch
 
         # throttle/brake control
+
+
         if self.force_brake:
             throttle = -1
             brake = 1
@@ -77,16 +79,23 @@ class PIDTurnController(Controller):
         elif self.delta_pitch < -2.3 and current_speed > 75 and not self.pitch_bypass:  # big bump
             throttle = -1
             brake = 1
+            #testing pitch value and throttle
+
+
             # print("BIG slope")
             # print(next_waypoint.record())
         elif sharp_error > 0.6 and current_speed > 90:  # narrow turn
             throttle = -0.55
             brake = 1
+            #TODO
+            if self.lat_pid_controller.minutes == 7 and self.lat_pid_controller.seconds > 55 and self.lat_pid_controller.seconds < 59:
+                print("in the box")
+            #print(sharp_error)
             # print("narrow turn")
         elif self.delta_pitch < -0.35 and current_speed > 90 and not self.pitch_bypass:  # small bump
             throttle = 0
             brake = 0
-            # print("slope:", round(self.delta_pitch, 3))
+            #print("slope:", round(self.delta_pitch, 3))
             # print(next_waypoint.record())
         elif abs(steering) > 0.3 and current_speed > 50:  # steering control
             throttle = 0.3
@@ -120,7 +129,14 @@ class PIDTurnController(Controller):
         return np.array([k_p, k_d, k_i])
 
 
+
 class LatPIDController(Controller):
+    def in_the_box(self):
+        if self.agent.vehicle.transform.location.x >2730 and self.agent.vehicle.transform.location.x < 2770\
+                and self.agent.vehicle.transform.location.z > 4780 and self.agent.vehicle.transform.location.z < 4840:
+            print("pass the line box")
+            return True
+        return False
     def __init__(self, agent, config: dict, steering_boundary: Tuple[float, float],
                  dt: float = 0.03, **kwargs):
         super().__init__(agent, **kwargs)
@@ -128,6 +144,9 @@ class LatPIDController(Controller):
         self.steering_boundary = steering_boundary
         self._error_buffer = deque(maxlen=10)
         self._dt = dt
+        self.start_time = time.time()
+        self.seconds = 0
+        self.minutes = 0
 
     def run_in_series(self, next_waypoint: Transform, close_waypoint: Transform, far_waypoint: Transform,
                       **kwargs) -> float:
@@ -140,6 +159,8 @@ class LatPIDController(Controller):
         Returns:
             lat_control
         """
+        self.time_tracker()
+
         speed = self.agent.vehicle.get_speed(self.agent.vehicle)
         # calculate a vector that represent where you are going
         v_begin = self.agent.vehicle.transform.location.to_array()
@@ -209,8 +230,7 @@ class LatPIDController(Controller):
             np.clip((k_p * error) + (k_d * _de) + (k_i * _ie), self.steering_boundary[0], self.steering_boundary[1])
         )
         deltasteering = 0
-        if sharp_error > 0.6:
-            #print(lat_control)
+        if sharp_error > 0.6 and not self.minutes == 7 and not self.seconds > 55 and not self.seconds < 59:
             if speed > 220:
                 deltasteering=0
             elif speed > 200:
@@ -224,9 +244,19 @@ class LatPIDController(Controller):
             else:
                 deltasteering = 0.03
             if sharp_cross[1] < 0:
-                deltasteering *= -1;
+                deltasteering *= -1
                 #print("right detected" , (lat_control + deltasteering))
             #elif sharp_cross[1] > 0:
                     #print("left detected")
         lat_control = min(max(lat_control + deltasteering, -1), 1)
         return lat_control, error, wide_error, sharp_error
+
+    def time_tracker(self):
+        curr_time = time.time()
+        if curr_time - self.start_time >= 1:
+            self.start_time = time.time()
+            self.seconds = self.seconds + 1
+            if self.seconds == 60:
+                self.minutes = self.minutes + 1
+                self.seconds = 0
+            #print(str(self.minutes) + " min " + str(self.seconds) + " sec")

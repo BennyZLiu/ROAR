@@ -9,7 +9,7 @@ from ROAR_Sim.carla_client.carla_runner import CarlaRunner
 from typing import Tuple
 from prettytable import PrettyTable
 from ROAR.agent_module.pid_agent import PIDAgent
-
+import time
 
 def compute_score(carla_runner: CarlaRunner) -> Tuple[float, int, int]:
     """
@@ -98,3 +98,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
